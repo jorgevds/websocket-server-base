@@ -1,0 +1,72 @@
+<html>
+  <head>
+    <title>TEST: WS connection</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #testBed {
+        max-height: calc(100vh - 50px);
+        width: 100vw;
+        overflow: auto;
+        padding: 12px;
+        font-size: 13px;
+        font-family: "Courier New", Courier, monospace;
+        background-color: lightgrey;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="testBtn">Send message</button>
+    <button id="echoBtn">Echo message</button>
+    <div id="testBed"></div>
+
+    <script>
+      const testBed = document.getElementById("testBed");
+      const testBtn = document.getElementById("testBtn");
+      const echoBtn = document.getElementById("echoBtn");
+
+      function connect() {
+        const testSocket = new WebSocket("ws://localhost:3000");
+        const returnSocket = new WebSocket("ws://localhost:3000");
+        returnSocket.onmessage = evt => {
+          console.log(evt.data);
+          testBed.innerHTML = testBed.innerHTML + evt.data + "<br/>";
+        };
+
+        testSocket.onmessage = evt => {
+          console.log(evt.data);
+          testBed.innerHTML = "<pre>" + evt.data + "</pre><br/>" + testBed.innerHTML;
+        };
+
+        testBtn.onclick = evt => {
+          testSocket.send(JSON.stringify({testmsg: "Hello"}));
+        };
+        echoBtn.onclick = evt => {
+          testSocket.send(JSON.stringify({echo: true, testmsg: "Hello"}));
+        };
+
+        testSocket.onerror = err => {
+          console.log(err);
+          testBed.innerHTML = testBed.innerHTML + err.message + "<br/>";
+        };
+
+        testSocket.onclose = () => {
+          console.log("Connection closed, reconnecting");
+          testBed.innerHTML = testBed.innerHTML + "Connection closed, reconnecting<br/>";
+          connect();
+        };
+
+        testSocket.onopen = () => {
+          console.log("Connection established");
+          testBed.innerHTML = testBed.innerHTML + "Connection established<br/>";
+        };
+      }
+      connect();
+    </script>
+  </body>
+</html>
